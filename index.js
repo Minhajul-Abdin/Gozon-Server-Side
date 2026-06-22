@@ -29,6 +29,8 @@ async function run() {
     const database = client.db("gozon_db");
     const propertiesCollection = database.collection("properties");
     const userCollection = database.collection("user");
+    const bookingCollection = database.collection("bookings");
+    const reviewCollection = database.collection("reviews");
 
     //api to insert new property data
     app.post("/api/properties", async (req, res) => {
@@ -49,6 +51,7 @@ async function run() {
         _id: new ObjectId(id),
       };
       const result = await propertiesCollection.findOne(query);
+      console.log("Result", result);
       res.send(result);
     });
 
@@ -58,6 +61,94 @@ async function run() {
         query.ownerId = req.query.ownerId;
       }
       const cursor = propertiesCollection.find(query);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
+    app.get("/api/featured/properties", async (req, res) => {
+      const query = {};
+      if (req.query.ownerId) {
+        query.ownerId = req.query.ownerId;
+      }
+      const cursor = propertiesCollection.find(query).limit(6);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
+    //Booking related apis
+    app.get("/api/bookings", async (req, res) => {
+      const query = {};
+      if (req.query.ownerId) {
+        query.ownerId = req.query.ownerId;
+      }
+      if (req.query.bookerId) {
+        query.bookerId = req.query.bookerId;
+      }
+      const cursor = bookingCollection.find(query);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
+    app.post("/api/bookings", async (req, res) => {
+      const booking = req.body;
+      const newBooking = {
+        ...booking,
+        createdAt: new Date(),
+      };
+      const result = await bookingCollection.insertOne(newBooking);
+      res.send(result);
+    });
+
+    //payment api
+
+    app.post("/api/payment", async (req, res) => {
+      const {
+        sessionId,
+        userId,
+        priceId,
+        name,
+        price,
+        propertyId,
+        title,
+        userEmail,
+      } = req.body;
+
+      const isExist = await bookingCollection.findOne({ sessionId });
+      if (isExist) {
+        return res.json({ msg: "Already exist!" });
+      }
+
+      await bookingCollection.insertOne({
+        sessionId,
+        userId,
+        priceId,
+        name,
+        price,
+        propertyId,
+        title,
+        userEmail,
+      });
+
+      res.json({ msg: "Payment successfull!" });
+    });
+
+    //review apis
+    app.post("/api/review", async (req, res) => {
+      const review = req.body;
+      const newReview = {
+        ...review,
+        createdAt: new Date(),
+      };
+      const result = await reviewCollection.insertOne(newReview);
+      res.send(result);
+    });
+
+    app.get("/api/review", async (req, res) => {
+      const query = {};
+      if (req.query.propertyId) {
+        query.propertyId = req.query.propertyId;
+      }
+      const cursor = reviewCollection.find(query);
       const result = await cursor.toArray();
       res.send(result);
     });
