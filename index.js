@@ -45,13 +45,19 @@ async function run() {
 
     // api to get properties
 
+    app.get("/api/allProperties", async (req, res) => {
+      const cursor = propertiesCollection.find();
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
     app.get("/api/properties/:id", async (req, res) => {
       const id = req.params.id;
       const query = {
         _id: new ObjectId(id),
       };
       const result = await propertiesCollection.findOne(query);
-      console.log("Result", result);
+      //console.log("Result", result);
       res.send(result);
     });
 
@@ -75,6 +81,18 @@ async function run() {
       res.send(result);
     });
 
+    app.patch("/api/properties/:id", async (req, res) => {
+      const id = req.params.id;
+      const updatedProperty = req.body;
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          status: updatedProperty.status,
+        },
+      };
+      const result = await propertiesCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
     //Booking related apis
     app.get("/api/bookings", async (req, res) => {
       const query = {};
@@ -143,13 +161,16 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/api/review", async (req, res) => {
-      const query = {};
-      if (req.query.propertyId) {
-        query.propertyId = req.query.propertyId;
-      }
+    app.get("/api/review/:id", async (req, res) => {
+      const id = req.params.id;
+
+      const query = {
+        propertyId: id,
+      };
+      console.log(query);
       const cursor = reviewCollection.find(query);
       const result = await cursor.toArray();
+      console.log(result);
       res.send(result);
     });
 
