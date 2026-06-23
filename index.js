@@ -31,6 +31,7 @@ async function run() {
     const userCollection = database.collection("user");
     const bookingCollection = database.collection("bookings");
     const reviewCollection = database.collection("reviews");
+    const favouriteCollection = database.collection("favourite");
 
     //api to insert new property data
     app.post("/api/properties", async (req, res) => {
@@ -172,6 +173,31 @@ async function run() {
       const result = await cursor.toArray();
       console.log(result);
       res.send(result);
+    });
+
+    app.get("/api/review/home", async (req, res) => {
+      const cursor = await reviewCollection.find().limit(4);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
+    //favourite apis
+    app.post("/api/favourite", async (req, res) => {
+      const favourite = req.body;
+      const cursor = favouriteCollection.find(favourite);
+      const favourites = await cursor.toArray();
+      const filter = {
+        favId: favourites._id.toString(),
+      };
+
+      const isExist = await favouriteCollection.findOne(filter);
+      if (isExist) {
+        return res.json({ msg: "Already exist!" });
+      }
+
+      await favouriteCollection.insertOne(favourite);
+
+      res.json({ msg: "favourite added successfull!" });
     });
 
     // Send a ping to confirm a successful connection
