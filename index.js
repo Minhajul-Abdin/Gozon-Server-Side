@@ -78,11 +78,8 @@ async function run() {
     //Booking related apis
     app.get("/api/bookings", async (req, res) => {
       const query = {};
-      if (req.query.ownerId) {
-        query.ownerId = req.query.ownerId;
-      }
-      if (req.query.bookerId) {
-        query.bookerId = req.query.bookerId;
+      if (req.query.userId) {
+        query.userId = req.query.userId;
       }
       const cursor = bookingCollection.find(query);
       const result = await cursor.toArray();
@@ -111,6 +108,7 @@ async function run() {
         propertyId,
         title,
         userEmail,
+        status,
       } = req.body;
 
       const isExist = await bookingCollection.findOne({ sessionId });
@@ -127,6 +125,8 @@ async function run() {
         propertyId,
         title,
         userEmail,
+        status,
+        createdAt: new Date(),
       });
 
       res.json({ msg: "Payment successfull!" });
