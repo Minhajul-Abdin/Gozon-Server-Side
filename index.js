@@ -175,19 +175,24 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/api/review/home", async (req, res) => {
-      const cursor = await reviewCollection.find().limit(4);
-      const result = await cursor.toArray();
-      res.send(result);
+    app.get("/api/review", async (req, res) => {
+      try {
+        const result = await reviewCollection.find({}).limit(4).toArray();
+
+        res.send(result);
+      } catch (error) {
+        console.error(error);
+        res.status(500).send({ message: "Failed to fetch reviews" });
+      }
     });
 
     //favourite apis
     app.post("/api/favourite", async (req, res) => {
       const favourite = req.body;
-      const cursor = favouriteCollection.find(favourite);
-      const favourites = await cursor.toArray();
+
       const filter = {
-        favId: favourites._id.toString(),
+        propertyId: favourite.propertyId,
+        bookerId: favourite.bookerId,
       };
 
       const isExist = await favouriteCollection.findOne(filter);
@@ -196,8 +201,7 @@ async function run() {
       }
 
       await favouriteCollection.insertOne(favourite);
-
-      res.json({ msg: "favourite added successfull!" });
+      res.json({ msg: "favourite added successfully!" });
     });
 
     // Send a ping to confirm a successful connection
