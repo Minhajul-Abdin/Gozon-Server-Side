@@ -11,6 +11,11 @@ app.get("/", (req, res) => {
   res.send("Hello World!");
 });
 
+const logger = (req, res, next) => {
+  console.log("logger millware", req.params);
+  next();
+};
+
 const uri = process.env.MONGO_DB_URI;
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -27,11 +32,62 @@ async function run() {
     await client.connect();
 
     const database = client.db("gozon_db");
+    const SessionCollection = database.collection("session");
     const propertiesCollection = database.collection("properties");
     const userCollection = database.collection("user");
     const bookingCollection = database.collection("bookings");
     const reviewCollection = database.collection("reviews");
     const favouriteCollection = database.collection("favourite");
+
+    //varification related stuff
+    const verifyToken = async (req, res, next) => {
+      const authHeader = req.headers?.authorization;
+      if (!authHeader) {
+        return res.status(401).send({ message: "unauthorized access" });
+      }
+
+      const token = authHeader.split(" ")[1];
+
+      if (!token) {
+        return res.status(401).send({ message: "unauthorized access" });
+      }
+
+      const query = { token: token };
+      const session = await SessionCollection.findOne(query);
+      const userId = session.userId;
+      const userQuery = {
+        _id: userId,
+      };
+
+      const user = await userCollection.findOne(userQuery);
+      console.log(user);
+      //set data
+      req.user = user;
+      next();
+    };
+
+    const verifyTenant = async (req, res, next) => {
+      if (req.user?.role !== "tenant") {
+        return res.status(403).send({ message: "forbidden access" });
+      }
+      next();
+    };
+
+    //must use after varifyToken middleware
+    const verifyAdmin = async (req, res, next) => {
+      if (req.user?.role !== "admin") {
+        return res.status(403).send({ message: "forbidden access" });
+      }
+      next();
+    };
+
+    //must use after varifyToken middleware
+    const verifyOwner = async (req, res, next) => {
+      if (req.user?.role !== "owner") {
+        return res.status(403).send({ message: "forbidden access" });
+      }
+      next();
+    };
 
     //api to insert new property data
     app.post("/api/properties", async (req, res) => {
@@ -95,10 +151,13 @@ async function run() {
       res.send(result);
     });
     //Booking related apis
-    app.get("/api/bookings", async (req, res) => {
+    app.get("/api/bookings", verifyToken, verifyTenant, async (req, res) => {
       const query = {};
       if (req.query.userId) {
         query.userId = req.query.userId;
+        if (req.query._id.toString() !== req.query.userId) {
+          return res.status(403).send({ message: "forbidden access" });
+        }
       }
       const cursor = bookingCollection.find(query);
       const result = await cursor.toArray();
