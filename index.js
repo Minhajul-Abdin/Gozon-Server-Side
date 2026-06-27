@@ -151,7 +151,7 @@ async function run() {
       res.send(result);
     });
     //Booking related apis
-    app.get("/api/bookings", verifyToken, verifyTenant, async (req, res) => {
+    app.get("/api/bookings", async (req, res) => {
       const query = {};
       if (req.query.userId) {
         query.userId = req.query.userId;
@@ -254,13 +254,31 @@ async function run() {
         bookerId: favourite.bookerId,
       };
 
+      const newFav = {
+        ...favourite,
+        createdAt: new Date(),
+      };
+
       const isExist = await favouriteCollection.findOne(filter);
       if (isExist) {
         return res.json({ msg: "Already exist!" });
       }
 
-      await favouriteCollection.insertOne(favourite);
+      await favouriteCollection.insertOne(newFav);
       res.json({ msg: "favourite added successfully!" });
+    });
+
+    app.get("/api/favourite", async (req, res) => {
+      const query = {};
+      if (req.query.userId) {
+        query.userId = req.query.userId;
+        if (req.query._id.toString() !== req.query.userId) {
+          return res.status(403).send({ message: "forbidden access" });
+        }
+      }
+      const cursor = favouriteCollection.find(query);
+      const result = await cursor.toArray();
+      res.send(result);
     });
 
     // Send a ping to confirm a successful connection
