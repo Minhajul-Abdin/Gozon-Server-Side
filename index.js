@@ -308,6 +308,33 @@ app.delete("/api/favourite", async (req, res) => {
 //}
 //run().catch(console.dir);
 
+// app.put("/api/users", async (req, res) => {
+//   const id = req.params.id;
+//   const updatedRole = req.body;
+//   console.log(updatedRole);
+//   const filter = { _id: new ObjectId(id) };
+//   const updateDoc = {
+//     $set: {
+//       userRole: updatedRole.userRole,
+//     },
+//   };
+//   const result = await userCollection.updateOne(filter, updateDoc);
+//   res.json(result);
+// });
+
+app.put("/api/idk", async (req, res) => {
+  const updatedRole = req.body;
+  console.log(updatedRole);
+  const filter = { _id: new ObjectId(updatedRole?.userId) };
+  const updateDoc = {
+    $set: {
+      userRole: updatedRole.newRole,
+    },
+  };
+  const result = await userCollection.updateOne(filter, updateDoc);
+  res.json(result);
+});
+
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
 });
