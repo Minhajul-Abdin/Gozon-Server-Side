@@ -254,15 +254,15 @@ async function run() {
         bookerId: favourite.bookerId,
       };
 
-      const newFav = {
-        ...favourite,
-        createdAt: new Date(),
-      };
-
       const isExist = await favouriteCollection.findOne(filter);
       if (isExist) {
         return res.json({ msg: "Already exist!" });
       }
+
+      const newFav = {
+        ...favourite,
+        createdAt: new Date(),
+      };
 
       await favouriteCollection.insertOne(newFav);
       res.json({ msg: "favourite added successfully!" });
@@ -279,6 +279,15 @@ async function run() {
       const cursor = favouriteCollection.find(query);
       const result = await cursor.toArray();
       res.send(result);
+    });
+
+    app.delete("/api/favourite", async (req, res) => {
+      const { propetryId } = req.body;
+      console.log(req.body);
+      const result = await favouriteCollection.deleteOne({
+        _id: new ObjectId(propetryId),
+      });
+      res.json(result);
     });
 
     // Send a ping to confirm a successful connection
